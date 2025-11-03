@@ -12,9 +12,12 @@ interface A2ARequest {
             parts: Array<{
                 kind: 'text';
                 text: string;
+                data?: any;
+                file_url?: string | null;
             }>;
             messageId: string;
             taskId: string;
+            metadata?: any;
         };
         configuration?: {
             blocking: boolean;
@@ -33,25 +36,51 @@ interface A2AResponse {
             state: 'completed' | 'failed';
             timestamp: string;
             message: {
-                messageId: string;
+                kind: 'message';
                 role: 'agent';
                 parts: Array<{
-                    kind: 'text';
-                    text: string;
+                    kind: 'text' | 'file';
+                    text?: string;
+                    data?: any;
+                    file_url?: string | null;
+                    file_name?: string;
+                    mime_type?: string;
                 }>;
-                kind: 'message';
+                messageId: string;
+                taskId: string;
+                metadata?: any;
             };
         };
         artifacts: Array<{
             artifactId: string;
             name: string;
             parts: Array<{
-                kind: 'text' | 'data';
+                kind: 'text' | 'data' | 'file';
                 text?: string;
                 data?: any;
+                file_url?: string | null;
+                file_name?: string;
+                mime_type?: string;
             }>;
         }>;
-        history?: any[];
+        history: Array<{
+            kind: 'message';
+            role: 'user' | 'agent';
+            parts: Array<{
+                kind: 'text';
+                text: string;
+                data?: any;
+                file_url?: string | null;
+            }>;
+            messageId: string;
+            taskId: string | null;
+            metadata?: any;
+        }>;
+        kind: 'task';
+    };
+    error: null | {
+        code: number;
+        message: string;
     };
 }
 
@@ -66,7 +95,7 @@ export async function handleA2ARequest(request: A2ARequest): Promise<A2AResponse
         .map(part => part.text)
         .join(' ');
 
-    // Extract userId from taskId or messageId (Telex should provide this)
+    // Extract userId from taskId or messageId
     const userId = message.messageId || taskId || 'default_user';
 
     try {
@@ -84,6 +113,7 @@ export async function handleA2ARequest(request: A2ARequest): Promise<A2AResponse
 
         // Extract the agent's response text
         const responseText = result.text || 'No response generated.';
+        const responseMessageId = `msg-${Date.now()}`;
 
         // Build artifacts
         const artifacts: any[] = [
@@ -93,7 +123,9 @@ export async function handleA2ARequest(request: A2ARequest): Promise<A2AResponse
                 parts: [
                     {
                         kind: 'text',
-                        text: responseText
+                        text: responseText,
+                        data: null,
+                        file_url: null
                     }
                 ]
             }
@@ -115,35 +147,77 @@ export async function handleA2ARequest(request: A2ARequest): Promise<A2AResponse
             });
         }
 
+        // Build history
+        const history = [
+            {
+                kind: 'message' as const,
+                role: 'user' as const,
+                parts: [
+                    {
+                        kind: 'text' as const,
+                        text: userMessage,
+                        data: null,
+                        file_url: null
+                    }
+                ],
+                messageId: message.messageId,
+                taskId: taskId,
+                metadata: null
+            },
+            {
+                kind: 'message' as const,
+                role: 'agent' as const,
+                parts: [
+                    {
+                        kind: 'text' as const,
+                        text: responseText,
+                        data: null,
+                        file_url: null
+                    }
+                ],
+                messageId: responseMessageId,
+                taskId: taskId,
+                metadata: null
+            }
+        ];
+
         // Return A2A compliant response
         return {
             jsonrpc: '2.0',
             id: requestId,
             result: {
                 id: taskId,
-                contextId: `context-${userId}`,
+                contextId: `ctx-${userId}`,
                 status: {
                     state: 'completed',
                     timestamp: new Date().toISOString(),
                     message: {
-                        messageId: `response-${Date.now()}`,
+                        kind: 'message',
                         role: 'agent',
                         parts: [
                             {
                                 kind: 'text',
-                                text: responseText
+                                text: responseText,
+                                data: null,
+                                file_url: null
                             }
                         ],
-                        kind: 'message'
+                        messageId: responseMessageId,
+                        taskId: taskId,
+                        metadata: null
                     }
                 },
                 artifacts,
-                history: []
-            }
+                history,
+                kind: 'task'
+            },
+            error: null
         };
 
     } catch (error) {
         console.error('❌ Error processing A2A request:', error);
+
+        const errorMessageId = `error-${Date.now()}`;
 
         // Return error response
         return {
@@ -151,20 +225,24 @@ export async function handleA2ARequest(request: A2ARequest): Promise<A2AResponse
             id: requestId,
             result: {
                 id: taskId,
-                contextId: `context-${userId}`,
+                contextId: `ctx-${userId}`,
                 status: {
                     state: 'failed',
                     timestamp: new Date().toISOString(),
                     message: {
-                        messageId: `error-${Date.now()}`,
+                        kind: 'message',
                         role: 'agent',
                         parts: [
                             {
                                 kind: 'text',
-                                text: '❌ Something went wrong. Please try again.'
+                                text: '❌ Something went wrong. Please try again.',
+                                data: null,
+                                file_url: null
                             }
                         ],
-                        kind: 'message'
+                        messageId: errorMessageId,
+                        taskId: taskId,
+                        metadata: null
                     }
                 },
                 artifacts: [
@@ -174,12 +252,19 @@ export async function handleA2ARequest(request: A2ARequest): Promise<A2AResponse
                         parts: [
                             {
                                 kind: 'text',
-                                text: error instanceof Error ? error.message : 'Unknown error'
+                                text: error instanceof Error ? error.message : 'Unknown error',
+                                data: null,
+                                file_url: null
                             }
                         ]
                     }
                 ],
-                history: []
+                history: [],
+                kind: 'task'
+            },
+            error: {
+                code: -32603,
+                message: error instanceof Error ? error.message : 'Internal error'
             }
         };
     }
