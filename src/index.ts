@@ -1,16 +1,14 @@
-import { Mastra } from '@mastra/core';
-import { challengeAgent } from './mastra/agents/challenge.agent';
+import 'dotenv/config'; // Add this line first
 import express from 'express';
+import { mastra } from './mastra';
+
+// Add this to verify env vars are loaded
+console.log('🔑 Environment check:');
+console.log('  GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? '✅ Set' : '❌ Missing');
+console.log('  GOOGLE_GENERATIVE_AI_API_KEY:', process.env.GOOGLE_GENERATIVE_AI_API_KEY ? '✅ Set' : '❌ Missing');
 
 const app = express();
 app.use(express.json());
-
-// Initialize Mastra
-const mastra = new Mastra({
-    agents: {
-        challengeAgent,
-    },
-});
 
 // Register A2A endpoint
 app.post('/a2a/agent/challengeAgent', async (req, res) => {
@@ -29,7 +27,8 @@ app.post('/a2a/agent/challengeAgent', async (req, res) => {
             id: req.body?.id || 'error',
             error: {
                 code: -32603,
-                message: 'Internal error'
+                message: 'Internal error',
+                details: error instanceof Error ? error.message : 'Unknown error'
             }
         });
     }

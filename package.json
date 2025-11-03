@@ -6,9 +6,9 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "mastra dev",
-    "build": "mastra build",
-    "start": "node --import=./.mastra/output/instrumentation.mjs .mastra/output/index.mjs",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
     "scheduler:trigger:morning": "tsx scripts/trigger-morning.ts",
     "scheduler:trigger:evening": "tsx scripts/trigger-evening.ts"
   },
