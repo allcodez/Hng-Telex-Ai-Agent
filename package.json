@@ -31,6 +31,7 @@
     "@ai-sdk/google": "^2.0.26",
     "@google/generative-ai": "^0.24.1",
     "@mastra/core": "^0.23.3",
+    "@mastra/libsql": "^0.16.1",
     "@types/node-cron": "^3.0.11",
     "axios": "^1.13.1",
     "node-cron": "^4.2.1",
