@@ -2,13 +2,12 @@
   "name": "devchallenge-bot",
   "version": "1.0.0",
   "description": "AI-powered daily programming challenge bot for Telex",
-  "type": "module",
-  "main": "dist/index.js",
+  "main": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "tsx src/index.ts",
+    "build": "echo 'No build needed with tsx'",
     "scheduler:trigger:morning": "tsx scripts/trigger-morning.ts",
     "scheduler:trigger:evening": "tsx scripts/trigger-evening.ts"
   },
@@ -21,12 +20,6 @@
   ],
   "author": "Fahd Adebayo",
   "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^24.9.2",
-    "mastra": "^0.17.7",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
-  },
   "dependencies": {
     "@ai-sdk/google": "^2.0.26",
     "@google/generative-ai": "^0.24.1",
@@ -34,7 +27,16 @@
     "@mastra/libsql": "^0.16.1",
     "@types/node-cron": "^3.0.11",
     "axios": "^1.13.1",
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
     "node-cron": "^4.2.1",
+    "tsx": "^4.20.6",
     "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^24.9.2",
+    "mastra": "^0.17.7",
+    "typescript": "^5.9.3"
   }
 }
