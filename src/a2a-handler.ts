@@ -1,4 +1,4 @@
-import { challengeAgent, formatChallengesResponse } from './mastra/agents/challenge.agent';
+import { challengeAgent } from './mastra/agents/challenge.agent';
 
 interface A2ARequest {
     jsonrpc: '2.0';
@@ -11,6 +11,7 @@ interface A2ARequest {
         };
         context?: {
             conversationId?: string;
+            userId?: string;
             history?: any[];
         };
     };
@@ -36,40 +37,30 @@ interface A2AResponse {
 }
 
 export async function handleA2ARequest(request: A2ARequest): Promise<A2AResponse> {
-    const { taskId, message } = request.params;
+    const { taskId, message, context } = request.params;
     const userMessage = message.content;
 
+    // Extract userId from context or use conversationId as fallback
+    const userId = context?.userId || context?.conversationId || 'default_user';
+
     try {
-        console.log(`Processing A2A request - Task: ${taskId}`);
-        console.log(`User message: ${userMessage}`);
+        console.log(`📨 A2A Request - Task: ${taskId}, User: ${userId}`);
+        console.log(`💬 Message: ${userMessage}`);
 
-        const result = await challengeAgent.generate(userMessage);
+        // Pass userId in the context so tools can access it
+        const result = await challengeAgent.generate(userMessage, {
+            resourceId: userId,
+            // userId: userId, // Make sure userId is available in context
+        });
 
-        let challenges: any[] = [];
-        let formattedResponse = '';
+        console.log('🤖 Agent result:', JSON.stringify(result, null, 2));
 
-        if (result.text) {
-            formattedResponse = result.text;
-        }
+        // Extract the agent's response
+        let responseText = result.text || 'No response generated.';
 
+        // If there were tool calls, the response should already be formatted
         if (result.toolResults && result.toolResults.length > 0) {
-            const toolResult = result.toolResults[0];
-            if (toolResult.result?.challenges) {
-                challenges = toolResult.result.challenges;
-                formattedResponse = formatChallengesResponse(challenges);
-            }
-        }
-
-        if (challenges.length === 0) {
-            formattedResponse = result.text || `I understand you want coding challenges! Please specify:
-
-🎯 **Example requests:**
-- "Give me 3 Python problems"
-- "Easy JavaScript challenges"
-- "Hard Java coding problems"
-- "Medium difficulty TypeScript questions"
-
-I'll generate 3 challenges with descriptions, examples, hints, and complexity analysis!`;
+            console.log('🔧 Tool results:', result.toolResults);
         }
 
         return {
@@ -80,24 +71,20 @@ I'll generate 3 challenges with descriptions, examples, hints, and complexity an
                 artifacts: [
                     {
                         type: 'text',
-                        title: challenges.length > 0
-                            ? `${challenges[0].language?.toUpperCase() || 'Coding'} Challenges - ${challenges[0].difficulty?.toUpperCase() || 'MEDIUM'}`
-                            : 'DevChallenge Bot',
-                        content: formattedResponse
+                        title: 'DevChallenge Bot',
+                        content: responseText
                     }
                 ],
                 message: {
                     role: 'assistant',
-                    content: challenges.length > 0
-                        ? `I've generated ${challenges.length} ${challenges[0].difficulty} ${challenges[0].language} challenges for you. Check them out below!`
-                        : formattedResponse.substring(0, 200) + '...'
+                    content: responseText
                 }
             },
             id: request.id
         };
 
     } catch (error) {
-        console.error('Error processing A2A request:', error);
+        console.error('❌ Error processing A2A request:', error);
 
         return {
             jsonrpc: '2.0',
@@ -108,12 +95,12 @@ I'll generate 3 challenges with descriptions, examples, hints, and complexity an
                     {
                         type: 'text',
                         title: 'Error',
-                        content: `❌ Failed to generate challenges: ${error instanceof Error ? error.message : 'Unknown error'}\n\nPlease try again or rephrase your request.`
+                        content: `❌ Something went wrong. Please try again.`
                     }
                 ],
                 message: {
                     role: 'assistant',
-                    content: 'Sorry, I encountered an error while generating challenges. Please try again.'
+                    content: 'Sorry, I encountered an error. Please try again.'
                 }
             },
             id: request.id
