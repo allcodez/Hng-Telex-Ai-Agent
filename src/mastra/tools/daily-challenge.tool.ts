@@ -8,7 +8,8 @@ const geminiService = new GeminiService();
 
 // Helper function to extract userId from context
 function extractUserId(context: any): string {
-    return context?.resourceId ||  // ✅ This is what Mastra uses
+    return context?.userId ||
+        context?.resourceid ||
         'default_user';
 }
 

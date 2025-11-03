@@ -1,21 +1,28 @@
-import { mastra } from './mastra';
-import { initializeScheduler, userRegistry } from './scheduler/cron-scheduler';
-import { registerUser, unregisterUser, getSchedulerStatus, manualTrigger } from './api/scheduler-routes';
+import { handleA2ARequest } from './a2a-handler';
+import express from 'express';
 
-console.log('🚀 Starting DevChallenge Bot...');
+const app = express();
+app.use(express.json());
 
-initializeScheduler();
+// A2A endpoint for Telex
+app.post('/a2a/agent/challengeAgent', async (req, res) => {
+    try {
+        const response = await handleA2ARequest(req.body);
+        res.json(response);
+    } catch (error) {
+        console.error('A2A endpoint error:', error);
+        res.status(500).json({
+            jsonrpc: '2.0',
+            id: req.body.id,
+            error: {
+                code: -32603,
+                message: 'Internal error'
+            }
+        });
+    }
+});
 
-userRegistry.addUser('default_user');
-
-console.log('✅ DevChallenge Bot is running!');
-console.log('📅 Scheduled challenges: 8 AM & 6 PM UTC');
-console.log('🔗 Agent endpoint: /api/agents/challengeAgent');
-
-export {
-    mastra,
-    registerUser,
-    unregisterUser,
-    getSchedulerStatus,
-    manualTrigger
-};
+const PORT = process.env.PORT || 4111;
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
