@@ -8,9 +8,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "mastra dev",
     "build": "mastra build",
-    "start": "node dist/index.js",
-    "scheduler:trigger:morning": "node -e \"require('./dist/scheduler/cron-scheduler').triggerScheduledChallenge('morning')\"",
-    "scheduler:trigger:evening": "node -e \"require('./dist/scheduler/cron-scheduler').triggerScheduledChallenge('evening')\""
+    "start": "node --import=./.mastra/output/instrumentation.mjs .mastra/output/index.mjs",
+    "scheduler:trigger:morning": "tsx scripts/trigger-morning.ts",
+    "scheduler:trigger:evening": "tsx scripts/trigger-evening.ts"
   },
   "keywords": [
     "ai-agent",
@@ -24,6 +24,7 @@
   "devDependencies": {
     "@types/node": "^24.9.2",
     "mastra": "^0.17.7",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   },
   "dependencies": {
