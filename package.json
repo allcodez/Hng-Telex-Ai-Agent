@@ -1,0 +1,38 @@
+{
+  "name": "devchallenge-bot",
+  "version": "1.0.0",
+  "description": "AI-powered daily programming challenge bot for Telex",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "mastra dev",
+    "build": "mastra build",
+    "start": "node dist/index.js",
+    "scheduler:trigger:morning": "node -e \"require('./dist/scheduler/cron-scheduler').triggerScheduledChallenge('morning')\"",
+    "scheduler:trigger:evening": "node -e \"require('./dist/scheduler/cron-scheduler').triggerScheduledChallenge('evening')\""
+  },
+  "keywords": [
+    "ai-agent",
+    "coding-challenges",
+    "telex",
+    "mastra",
+    "a2a-protocol"
+  ],
+  "author": "Fahd Adebayo",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "mastra": "^0.17.7",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^2.0.26",
+    "@google/generative-ai": "^0.24.1",
+    "@mastra/core": "^0.23.3",
+    "@types/node-cron": "^3.0.11",
+    "axios": "^1.13.1",
+    "node-cron": "^4.2.1",
+    "zod": "^4.1.12"
+  }
+}
